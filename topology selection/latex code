@@ -48,8 +48,7 @@ This topology utilizes a single-phase AC input rectified by a full-bridge diode 
 \end{itemize}
 
 \subsubsection{Option B: Three-Phase Rectifier + Buck Converter}
-This topology utilizes a three-phase AC input rectified by a 6-pulse diode bridge, creating a DC link that feeds the buck converter.
-
+This topology utilizes a three-phase AC input rectified by a 6-pulse diode bridge, creating a DC link that feeds the buck converter (see Figure~\ref{fig:topology_b}).
 
 \begin{figure}[H]
     \centering
@@ -108,7 +107,7 @@ This topology replaces the freewheeling diode of the standard Buck converter wit
 \end{table}
 
 \subsection{Final Selection and Justification}
-Based on the analysis above, the team has selected \textbf{Option B: Three-Phase Diode Rectifier + Buck Converter}.
+Based on the analysis above and the comparison in Table~\ref{tab:comparison}, the team has selected \textbf{Option B: Three-Phase Diode Rectifier + Buck Converter}.
 
 \paragraph{Justification 1: Voltage Headroom}
 The motor requires a maximum voltage ($V_{out,max}$) of $180\text{ V}$. A buck converter can only step down voltage ($V_{out} = D \times V_{in}$). Therefore, the DC link voltage ($V_{in}$) must consistently remain above $180\text{ V}$ plus the voltage drops across switches and inductors.
