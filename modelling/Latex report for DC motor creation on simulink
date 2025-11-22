@@ -1,0 +1,64 @@
+% --- START OF MOTOR MODELING SECTION ---
+
+\section{DC Motor Modeling and Verification}
+
+Before designing the power electronics converter, the DC motor parameters were calculated and verified in the Simulink environment to ensure the simulation model accurately represents the physical plant.
+
+\subsection{Parameter Extraction}
+The available motor is a 5.5 HP, 220 V, 1500 RPM Separately Excited DC Machine. While the electrical resistances ($R_a, R_f$) and inductances ($L_a, L_f$) were measured directly, the mechanical and electromagnetic parameters required for the Simulink ``DC Machine'' block were derived analytically.
+
+\subsubsection{Field-Armature Mutual Inductance ($L_{af}$)}
+The mutual inductance determines the back-EMF generated for a given field current. Using the rated values ($V_t=220\text{ V}, I_a=23.4\text{ A}, \omega=157\text{ rad/s}$) and the measured total armature resistance ($R_{total} = 0.8 + 0.27 = 1.07\,\Omega$):
+
+\begin{equation}
+    E_a = V_t - I_a R_{total} = 220 - (23.4 \times 1.07) \approx 195\text{ V}
+\end{equation}
+
+With a field current $I_f \approx 1.05\text{ A}$ (at 220 V excitation), $L_{af}$ was calculated as:
+
+\begin{equation}
+    L_{af} = \frac{E_a}{I_f \cdot \omega} = \frac{195}{1.05 \cdot 157} \approx 1.18\text{ H}
+\end{equation}
+
+\subsubsection{Mechanical Parameters}
+To account for the coupled generator setup, the total inertia ($J$) was estimated to be double that of a standard motor ($0.06\text{ kg}\cdot\text{m}^2$). The viscous friction coefficient ($B_m$) was derived assuming friction losses are approximately 2\% of the rated power.
+
+The final parameters used in the simulation are summarized in Table~\ref{tab:motor_params}.
+
+\begin{table}[H]
+    \centering
+    \caption{Derived Simulation Parameters for DC Machine}
+    \label{tab:motor_params}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+        \midrule
+        Armature Resistance & $R_a$ & $1.07\,\Omega$ \\
+        Armature Inductance & $L_a$ & $24.5\text{ mH}$ \\
+        Field Resistance & $R_f$ & $210\,\Omega$ \\
+        Mutual Inductance & $L_{af}$ & $1.18\text{ H}$ \\
+        Total Inertia & $J$ & $0.06\text{ kg}\cdot\text{m}^2$ \\
+        Viscous Friction & $B_m$ & $0.0032\text{ N}\cdot\text{m}\cdot\text{s}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Model Verification Results}
+A test simulation was conducted to verify these parameters. The motor was supplied with rated voltage (220 V DC) and subjected to a step load torque of $26.1\text{ Nm}$ (Rated Torque) at $t=2.0\text{ s}$. The resulting transient response is visualized in Figure~\ref{fig:motor_verif}.
+
+\begin{itemize}
+    \item \textbf{No-Load Condition ($t < 2\text{ s}$):} The motor speed settles at approximately $177\text{ rad/s}$ ($1690\text{ RPM}$).
+    \item \textbf{Full-Load Condition ($t > 2\text{ s}$):} Upon application of rated torque, the speed drops to $159\text{ rad/s}$ ($1518\text{ RPM}$) and the current settles at $21\text{ A}$.
+\end{itemize}
+
+These results deviate by less than 1.5\% from the nameplate speed of 1500 RPM, confirming that the dynamic model is accurate enough for drive design.
+
+\begin{figure}[H]
+    \centering
+    % IMPORTANT: Make sure the image file name matches exactly
+    \includegraphics[width=0.8\textwidth]{dc_motor_block.png}
+    \caption{Motor Step Response: Speed (top) and Armature Current (bottom). A rated load torque of 26.1 Nm is applied at t=2s, causing the speed to settle near the rated 1500 RPM.}
+    \label{fig:motor_verif}
+\end{figure}
+
+% --- END OF MOTOR MODELING SECTION ---

@@ -1,0 +1,129 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs} % For professional tables
+\usepackage{float}    % To force image placement
+\usepackage{hyperref}
+
+\begin{document}
+
+% --- START OF TOPOLOGY SELECTION SECTION ---
+
+\section{Topology Selection and Analysis}
+
+\subsection{Design Requirements and Constraints}
+The primary objective of this project is to design a DC motor drive capable of providing a controllable output voltage ($V_{out}$) up to $180\text{ V}$. The critical constraint defining the topology selection is the output current ripple frequency requirement:
+
+\begin{equation}
+    f_{ripple} > 1 \text{ kHz}
+\end{equation}
+
+Standard line-commutated converters (such as controlled thyristor bridges) produce ripple frequencies dependent on the grid frequency ($2f_{grid} = 100\text{ Hz}$ for single-phase, $6f_{grid} = 300\text{ Hz}$ for three-phase). To meet the $>1\text{ kHz}$ requirement, a Switch Mode Power Supply (SMPS) approach—specifically a DC-DC chopper—is required. Therefore, all topologies considered utilize a two-stage conversion process:
+
+\begin{enumerate}
+    \item \textbf{AC-DC Rectification:} Uncontrolled diode rectification to create a DC bus.
+    \item \textbf{DC-DC Conversion:} High-frequency switching to control the motor voltage and satisfy the ripple frequency constraint.
+\end{enumerate}
+
+\subsection{Candidate Topologies}
+Three primary topologies were evaluated for this application.
+
+\subsubsection{Option A: Single-Phase Rectifier + Buck Converter}
+This topology utilizes a single-phase AC input rectified by a full-bridge diode rectifier, followed by a standard step-down (buck) converter.
+
+\begin{itemize}
+    \item \textbf{Advantages:}
+    \begin{itemize}
+        \item Simplest implementation and lowest component count.
+        \item Easier PCB/Stripboard layout due to fewer power traces.
+    \end{itemize}
+    \item \textbf{Disadvantages:}
+    \begin{itemize}
+        \item \textbf{High DC Link Ripple:} The rectified voltage drops to zero every half-cycle (without capacitance). To maintain a stable DC link voltage above the required motor voltage ($180\text{ V}$), a very large and physically bulky DC-link capacitor is required.
+        \item \textbf{High Current Stress:} The single-phase input diodes must handle the full power load, increasing thermal management requirements.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Option B: Three-Phase Rectifier + Buck Converter}
+This topology utilizes a three-phase AC input rectified by a 6-pulse diode bridge, creating a DC link that feeds the buck converter (see Figure~\ref{fig:topology_b}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{topology.png}
+    \caption{Proposed Topology: Three-Phase Diode Rectifier with Buck Converter}
+    \label{fig:topology_b}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Advantages:}
+    \begin{itemize}
+        \item \textbf{Superior DC Link Quality:} The voltage ripple of a 3-phase rectifier is significantly lower (approx. 4\%) and the frequency is higher ($300\text{ Hz}$). The voltage never drops to zero (minimum $\approx 1.5 \times V_{line-peak}$).
+        \item \textbf{Reduced Capacitor Requirements:} Due to the smoother rectified voltage, the DC link capacitor can be smaller while still maintaining the ``headroom'' voltage required for the buck converter operation.
+        \item \textbf{Load Balancing:} Draws power symmetrically from the grid, which is standard industrial practice.
+    \end{itemize}
+    \item \textbf{Disadvantages:}
+    \begin{itemize}
+        \item Requires a 3-phase source (available per project specs) and 6 diodes.
+        \item Slightly more complex input wiring.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Option C: Synchronous Buck (Half-Bridge) Converter}
+This topology replaces the freewheeling diode of the standard Buck converter with a second MOSFET/IGBT.
+
+\begin{itemize}
+    \item \textbf{Advantages:}
+    \begin{itemize}
+        \item \textbf{Regenerative Braking:} Allows current to flow from the motor back to the DC link, enabling active braking.
+        \item \textbf{Efficiency:} Lower conduction losses in the low-side switch compared to a diode.
+    \end{itemize}
+    \item \textbf{Disadvantages:}
+    \begin{itemize}
+        \item \textbf{Shoot-Through Risk:} Requires precise ``dead-time'' control to prevent shorting the DC link.
+        \item \textbf{Drive Complexity:} Requires a complex gate driver with bootstrap circuitry. Given the project timeline and the ``Safe Stop'' requirement (which can be achieved by coasting), this adds unnecessary risk.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Comparative Analysis Matrix}
+
+\begin{table}[H]
+    \centering
+    \caption{Topology Comparison Matrix}
+    \label{tab:comparison}
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Feature} & \textbf{1-Phase + Buck} & \textbf{3-Phase + Buck} & \textbf{Sync Buck} \\
+        \midrule
+        Complexity & Low & Low-Medium & High \\
+        DC Link Stability & Low & High & High \\
+        Capacitor Stress & High & Low & Low \\
+        Ripple Frequency & $>1$ kHz & $>1$ kHz & $>1$ kHz \\
+        Risk Factor & Medium (Voltage Sag) & Low & High (Control Logic) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Final Selection and Justification}
+Based on the analysis above and the comparison in Table~\ref{tab:comparison}, the team has selected \textbf{Option B: Three-Phase Diode Rectifier + Buck Converter}.
+
+\paragraph{Justification 1: Voltage Headroom}
+The motor requires a maximum voltage ($V_{out,max}$) of $180\text{ V}$. A buck converter can only step down voltage ($V_{out} = D \times V_{in}$). Therefore, the DC link voltage ($V_{in}$) must consistently remain above $180\text{ V}$ plus the voltage drops across switches and inductors.
+
+\begin{equation}
+    V_{link,min} > \frac{V_{out,max}}{D_{max}} \approx \frac{180\text{ V}}{0.95} \approx 190\text{ V}
+\end{equation}
+
+A 3-phase rectifier provides a stiff DC voltage averaging $1.35 \times V_{LL}$. Using the Variac to provide a line-to-line voltage of approx $150\text{ V}_{rms}$ will result in a DC link of $\approx 200\text{ V}$, providing the necessary headroom with minimal capacitance. A single-phase rectifier would require excessive capacitance to prevent the DC link from dipping below $190\text{ V}$ in the valleys of the AC sine wave.
+
+\paragraph{Justification 2: Reliability and Timeline}
+The 3-phase diode bridge is extremely robust and minimizes stress on the DC link capacitor, which is a common failure point. The standard Buck topology (single switch) eliminates the risk of ``shoot-through'' associated with half-bridge topologies, simplifying the gate drive requirements to a single isolated driver. This aligns with the project goal of reaching a robust, working prototype by the demo deadline.
+
+\paragraph{Justification 3: Ripple Requirement}
+By selecting a switching frequency ($f_{sw}$) for the Buck converter in the range of $5\text{ kHz} - 20\text{ kHz}$, we inherently satisfy the project requirement of $f_{ripple} > 1\text{ kHz}$.
+
+% --- END OF TOPOLOGY SELECTION SECTION ---
+
+\end{document}
